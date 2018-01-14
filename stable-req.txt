@@ -1,0 +1,6 @@
+Freezer
+futures==3.2.0
+gevent==1.2.2
+greenlet==0.4.12
+mock==2.0.0
+requests==2.18.4
