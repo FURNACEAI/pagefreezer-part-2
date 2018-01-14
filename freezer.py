@@ -14,51 +14,47 @@ import cProfile
 import urllib2
 import datetime
 import sys
+import signal
 from requests.exceptions import ConnectionError
 import freezer_config as cfg
-
-
-URLS = ['http://www.foxnews.com/',
-    'http://www.cnn.com/',
-    'http://europe.wsj.com/',
-    'http://www.bbc.co.uk/',
-    'http://some-made-up-domain.com/',
-    'http://some-made-up-domain.com/',
-    '7 http://some-made-up-domain.com/',
-    '8 http://some-made-up-domain.com/',
-    '9 http://some-made-up-domain.com/',
-    '10 http://some-made-up-domain.com/',
-    '11 http://some-made-up-domain.com/',
-    '12 http://some-made-up-domain.com/',
-    '13 http://some-made-up-domain.com/',
-    '14 http://some-made-up-domain.com/',
-    '15 http://some-made-up-domain.com/',
-    '16 http://some-made-up-domain.com/',
-    '17 http://some-made-up-domain.com/',
-    '18 http://some-made-up-domain.com/',
-    '19 http://some-made-up-domain.com/',
-    '20 http://some-made-up-domain.com/',
-    '21 http://some-made-up-domain.com/',
-    '22 http://some-made-up-domain.com/',
-    '23 http://some-made-up-domain.com/',
-    '24 http://some-made-up-domain.com/',
-    '25 http://some-made-up-domain.com/']
+import json
+import random
+import gevent
+from gevent.threadpool import ThreadPool
 
 class Freezer:
-    thread_pools = ['futures', 'gevent']
-    # def __init__(self):
-        # Load the configuration files
+    cls_urls = []
+    cls_limit = cfg.app['limit']
+    cls_counter = 0
+    cls_threadpool = 'futures'
 
-    def set_profiling(self, p=FALSE): 
-        self.profile == p
+    def __init__(self):
+        self.set_urls()
+
+    def set_limit(self, limit):
+        self.cls_limit = int(limit)
+
+    def get_limit(self):
+        """ Getter for the number of URLs to process"""
+        return self.cls_limit
+
+    def set_urls(self):
+        print('Loading URL list...')
+        self.cls_urls = json.load(open(cfg.cache['data_directory']+'/urls.json'))
+
+    def get_urls(self):
+        """ Getter for the list of URLs """
+        return self.cls_urls[0:self.get_limit()]
+
+    def get_profiling(self):
+        return self.cls_profile
+
+    def set_profiling(self, p):
+        self.cls_profile == p
 
     def set_threading(self, tp):
-        # Sanity check
-        if tp in self.thread_pools:
-            self.tp = tp
-        else:
-            # Default to futures
-            self.tp = 'futures'
+        # We could performance a sanity check to ensure that the threading pool option exists but we restrict that via the arguments so...
+        self.cls_threadpool = tp
 
     def fetch_url(self, url, sleeptime=5):
         """
@@ -77,26 +73,32 @@ class Freezer:
         -------
         This is a recursive function and doesn't return a value.
         """
-
         # Normally we would probably caculate the exectuion time with a decorator, however, you can't do that with a recursive function since the end of the wrapper would never be executed due to this being a recusrive function.
         et_start = time.time()
+        self.cls_counter = self.cls_counter + 1
+        print(self.cls_counter)
+        print("Attempting to poll: %s " % url)
         try:
-            response = urllib2.urlopen(url, timeout=(sleeptime/2)) # Set the timeout to half of the sleep interval so the schedule isn't thrown completely out of whack on a timeout. Natually, this could be further customized.
+            response = urllib2.urlopen(url, timeout=(sleeptime/2)) # Set the timeout to half of the sleep interval so the schedule isn't thrown completely out of whack on a timeout. If the delay on a page is greater than the timeout this obviously throws a false positive.
             res_bytes = sys.getsizeof(response.read())
             res_code = response.code
-
+            print("%s - Returned HTTP code %s" % (url, response.code))
             # Only print this on a successful request
             # Format#  13/11/17 11:18:20 - http://cnn.com - 231274 Bytes
-            print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
+            #print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
         except urllib2.HTTPError as e:
-            print(e.code)
-        except urllib2.URLError:
-            print('Possible malformed URL - %s' % url)
+            print("%s - Returned HTTP Code: %s \n" % (url, e.code))
+        except urllib2.URLError as e:
+            print(e)
+            print('%s - Possible malformed URL\n' % (url))
         except requests.exceptions.RequestException as e:
             print(e)
-
+        except:
+            print("Unexpected error")
+            #print(sys.exc_info()[0])
+            # print("%s - Unexpected error: %s" % (url, sys.exc_info()[0]))
+            raise
         et_end = time.time()
-
         sleep(sleeptime)
         """
         re: calling sleep() here.
@@ -115,6 +117,7 @@ class Freezer:
 
         For the purposes of this exercise we're keeping it stuid simple.
         """
+
         """
         Recurrsively calling self to keep the process running forever.
         This forces the thread pool manager to manage thread allocation across
@@ -126,7 +129,9 @@ class Freezer:
         """
         Compiles stats from the database into a snapshot summary.
 
-        I normally wouldn't build this like this but it was requested in the assignment. This would be better handeled as a cron job. I might be reading the task -- "data on the status of the system should be logged every minute" -- incorrectly. Maybe this means logged to the console since it doesn't seem like this data summary needs to be persistant and could be built upon request. But, there you have it. To see a view on the summary data use the view_summary() function.
+        The assignment didn't really say where or how these should be logged so we're just going to print these to the console every n seconds. Obviously this could be customized.
+
+        This isn't how I would normally build something like this. This should be in a cron job, however, I also wouldn't build a daemon that printed to console continuously either, but it's a scratch test so there it is.
 
         Parameters
         ----------
@@ -138,7 +143,6 @@ class Freezer:
         This is a recursive function and doesn't return a value.
 
          """
-
         sleep(sleeptime) # Don't summerize immediately at startup
         print("\n\n\n\n\nSummerizing the stats\n\n\n\n")
         self.summarize_stats(sleeptime)
@@ -146,26 +150,38 @@ class Freezer:
     def view_summary(self):
         print('Here is your stat summary')
 
+    def gevent_thread_test(self, *args):
+        gevent.sleep(random.randint(0,2)*0.001)
+        print('%i - %s - Task done' % (args[2], args[0]))
 
     def gevent_threading(self, urls):
         threads = []
-        for i in range(1,10):
-            threads.append(gevent.spawn(fetch, i))
+        for d in urls:
+            threads.append(gevent.spawn(self.fetch_url, d['url'], int(d['interval'])))
         gevent.joinall(threads)
 
     def futures_threading(self, urls):
-        # We're not passing in a max_workers to ThreadPoolExecutor so it will use all cores.
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.submit(self.summarize_stats, 60)
-            [executor.submit(self.fetch_url, url, 5) for url in urls]
+        print("Loading %s URLs into the futures thread pool..." % len(urls))
+        # If you don't assign a max_workers number it appears that the pool will trim the list to a multiple of the cores. Some research is needed.
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=(len(urls)+1)) as executor: # +1 for the stats loop
+                executor.submit(self.summarize_stats, 60)
+                [executor.submit(self.fetch_url, d['url'], int(d['interval'])) for d in urls] # JSON wasn't stored as an object but a list of dicts, hence the syntax.
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
 
     def start_daemon(self):
-        if self.tp == 'gevent':
-            self.futures_threading(urls)
+        if self.cls_threadpool == 'gevent':
+            self.gevent_threading(self.get_urls())
         else: # Default to futures
-            self.futures_threading(URLS)
+            self.futures_threading(self.get_urls())
 
-
+    def signal_handler(signal, frame):
+            # There's a way to shut down the ThreadPoolExecutor gracefully with .shutdown, I think, however, this would require class scope access. Which seems messy.
+            print('Shutting down.')
+            sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
 
 
 #@atexit.register
