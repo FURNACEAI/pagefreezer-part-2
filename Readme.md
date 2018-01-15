@@ -91,3 +91,5 @@ You can disable this check by adding check_same_thread=False to the .connect() m
 2) Just realized I should destroy any URLs in the list not being used post-limit so they're not chewing up memory. Noted for improvements.
 
 3) The summary stat "Largest URL delay (last 5 mins):" can return None if it's been more than five minutes since this was running. Noted for improvements.
+
+4) Run this long enough with low memory and a large dataset and it will absolutely seg fault. You're welcome. 
