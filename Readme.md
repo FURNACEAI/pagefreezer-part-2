@@ -10,7 +10,7 @@ There are several urls in this list that are duplicates. The app doesn't regard 
 
 Decided to use a threading model with recursive functions for the core processing. In a nutshell a thread pool manager is loaded with all of the tasks and a single func -- fetch_url() -- mapped to each thread with the URL and sleep time.
 
-Is this a good idea? Good question. Not on a single CPU running on a laptop. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts but I didn't consult them for this.
+Is this a good idea? Good question. Certainly, not on a single CPU running on a laptop. Certainly not if you want don't a single point of failure. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts, I didn't consult them for this. My gut says this isn't the best method of tackling this problem but given the time constraints, this was an option that could be built.
 
 ## Thread Pooling and futures
 
@@ -52,15 +52,17 @@ Note: If you don't pass in -s then the service doesn't start will exit quietly.
 
 Regarding the following instruction: *what URLS are currently being checked*
 
-I took this to mean the list of the URLs being checked by the entire process, not a snapshot of URLs being processed at that instant. That's doable using a small stateful wrapper in fetch_url(), however, given we're dealing in milliseconds at a given time I would suspect this list would often be empty.
+I took this to mean the list of the URLs being checked by the entire process, not a snapshot of URLs being processed at that instant. The later is doable using a small stateful wrapper in fetch_url().
 
-If the assumption is wrong it can always be added in.
+In either case, I left it off the summary stats console log since it could print out 1,000 URLs since I expanded the test set.
+
+What was your intention with this request? I can build it but would need some clairification.
 
 ## Testing
 
 > *we'd like to see some test cases for your implementation, checking the main features we outlined in the description of the problem (no need to test everything!)*
 
-Yeah, me too. Testing recursive code -- which the bulk of this code is -- is hard even with Mock. I could add some logging nonsense specific to testing but sounds like a terrible idea. 
+Yeah, me too. Testing recursive code -- which the bulk of this code is -- is hard even with Mock. I could add some logging nonsense specific to testing but sounds like a terrible idea.
 
 I'll add some tests for the stats functions.
 
