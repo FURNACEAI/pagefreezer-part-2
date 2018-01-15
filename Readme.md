@@ -12,6 +12,10 @@ Decided to use a threading model with recursive functions for the core processin
 
 Is this a good idea? Good question. Certainly, not on a single CPU running on a laptop. Certainly not if you want don't a single point of failure. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts, I didn't consult them for this. My gut says this isn't the best method of tackling this problem but given the time constraints, this was an option that could be built.
 
+In the end, there's a germ of an idea that could be built upon here.
+
+Maybe.
+
 ## Thread Pooling and futures
 
 As a default I'm using concurrent.futures for a couple of reasons:
@@ -22,7 +26,7 @@ As a default I'm using concurrent.futures for a couple of reasons:
 
 3) asyncio isn't technically supported in Python 2.x (I don't believe) and Trollius is throwing a ton of errors that I didn't feel like debugging
 
-An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does so very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with [dispy][http://dispy.sourceforge.net/], [Celery][http://www.celeryproject.org/], or, possibly, a message queing solution.
+An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does so very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with [dispy](http://dispy.sourceforge.net/), [Celery](http://www.celeryproject.org/), or, possibly, a message queing solution.
 
 On my laptop this process bogs down on any list of urls > 4,000 items.
 

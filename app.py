@@ -5,14 +5,13 @@ __version__ = "0.1"
 __email__ = "bryan@furnaceai.com"
 __status__ = "Testing"
 
-import sys
 import argparse
 from freezer import Freezer
 
 def main():
     parser = argparse.ArgumentParser(description='Website / endpoint polling daemon for determining the health of a list of URLs.')
 
-    parser.add_argument('-s', '--start', action="store_true", help='Starts the polling daemon.' )
+    parser.add_argument('-s', '--start', action="store_true", help='Starts the polling daemon.')
 
     parser.add_argument('-t', '--threading', help='Tells the application which thread pool manager to use. Defaults to "futures."', choices=['futures', 'gevent'])
 
@@ -27,7 +26,7 @@ def main():
     if args.limit:
         f.set_limit(args.limit)
     if args.threading:
-            f.set_threading(args.threading)
+        f.set_threading(args.threading)
     if args.viewstats:
         f.summarize_stats(0)
     if args.start:

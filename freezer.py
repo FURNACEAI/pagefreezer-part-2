@@ -9,20 +9,18 @@ __status__ = "Testing"
 import concurrent.futures
 import time
 from time import sleep
-import atexit
-import cProfile
 import urllib2
 import datetime
 import sys
 import signal
-from requests.exceptions import ConnectionError
-import freezer_config as cfg
 import json
 import random
-import gevent
-from gevent.threadpool import ThreadPool
 import sqlite3
 from sqlite3 import Error
+import gevent
+from gevent.threadpool import ThreadPool
+import freezer_config as cfg
+from requests.exceptions import ConnectionError
 
 class Freezer:
     cls_urls = []
@@ -31,6 +29,7 @@ class Freezer:
     cls_threadpool = 'futures'
     cls_conn = None
     cls_cur = None
+    cls_profile = False
     cls_stats_template = """\n%s
 STATS SUMMARY
 Total URLs checked: %s
@@ -43,7 +42,7 @@ URLs in the queue: %s
     def __init__(self):
         self.set_urls()
         db = "%s/%s" % (cfg.cache['logging_directory'], cfg.cache['log_filename'])
-        self.create_db_connection(db)
+        self.__create_db_connection(db)
 
     def set_limit(self, limit):
         self.cls_limit = int(limit)
@@ -65,7 +64,7 @@ URLs in the queue: %s
         return self.cls_profile
 
     def set_profiling(self, p):
-        self.cls_profile == p
+        self.cls_profile = p
         return None
 
     def set_threading(self, tp):
@@ -73,7 +72,7 @@ URLs in the queue: %s
         self.cls_threadpool = tp
         return None
 
-    def setup_database(self):
+    def __setup_database(self):
         # Ha! cold_storage! Good one...
         sql = "CREATE TABLE IF NOT EXISTS cold_storage (url text NOT NULL, http_response INTEGER NOT NULL, response_time NUMERIC NOT NULL, created_on NUMERIC NOT NULL);"
         # This is a little lazy but it works.
@@ -85,7 +84,7 @@ URLs in the queue: %s
             print("SQLite Error: %s" % sql)
         return None
 
-    def create_db_connection(self, db):
+    def __create_db_connection(self, db):
         """
         Create a database connection to the SQLite database specified by the db_file
         Parameters
@@ -98,13 +97,13 @@ URLs in the queue: %s
         """
         try:
             self.cls_conn = sqlite3.connect(db, check_same_thread=False)
-            self.setup_database()
+            self.__setup_database()
             self.cls_cur = self.cls_conn.cursor()
         except Error as e:
             print(e)
         return None
 
-    def log_response(self, url, response, execution_time):
+    def __log_response(self, url, response, execution_time):
         sql = "INSERT INTO cold_storage VALUES ('%s', %s, %s, %s)" % (url, int(response), execution_time, time.time())
         try:
             self.cls_conn.execute(sql)
@@ -114,7 +113,7 @@ URLs in the queue: %s
             print("SQLite Error: %s" % sql)
 
 
-    def fetch_response_codes(self):
+    def __fetch_response_codes(self):
         sql = "SELECT http_response, COUNT(http_response) FROM cold_storage GROUP BY http_response ORDER BY http_response ASC LIMIT 5"
         try:
             self.cls_cur.execute(sql)
@@ -123,12 +122,12 @@ URLs in the queue: %s
             print(er)
             print("SQLite Error: %s" % sql)
 
-    def offset_timestamp(self, min_offset):
+    def __offset_timestamp(self, min_offset):
         sec = min_offset*60
         return (time.time()-sec)
 
-    def fetch_max_response_time(self):
-        sql = "SELECT url, MAX(response_time) FROM 'cold_storage' WHERE created_on > %s AND http_response = 200" % self.offset_timestamp(5)
+    def __fetch_max_response_time(self):
+        sql = "SELECT url, MAX(response_time) FROM 'cold_storage' WHERE created_on > %s AND http_response = 200" % self.__offset_timestamp(5)
         try:
             self.cls_cur.execute(sql)
             return self.cls_cur.fetchone()
@@ -136,8 +135,8 @@ URLs in the queue: %s
             print(er)
             print("SQLite Error: %s" % sql)
 
-    def fetch_total_requests(self):
-        sql ="SELECT COUNT (url) FROM 'cold_storage'"
+    def __fetch_total_requests(self):
+        sql = "SELECT COUNT (url) FROM 'cold_storage'"
         try:
             self.cls_cur.execute(sql)
             return self.cls_cur.fetchone()
@@ -145,7 +144,7 @@ URLs in the queue: %s
             print(er)
             print("SQLite Error: %s" % sql)
 
-    def fetch_total_unique_request(self):
+    def __fetch_total_unique_request(self):
         sql = "SELECT COUNT (DISTINCT url) FROM 'cold_storage'"
         try:
             self.cls_cur.execute(sql)
@@ -154,7 +153,7 @@ URLs in the queue: %s
             print(er)
             print("SQLite Error: %s" % sql)
 
-    def fetch_url(self, url, sleeptime=5):
+    def __fetch_url(self, url, sleeptime=5):
         """
         Attempts to a poll a URL and logs the results to the console and a database.
 
@@ -195,7 +194,7 @@ URLs in the queue: %s
             raise
         et_end = time.time()
 
-        self.log_response(url, response_code, et_end - et_start)
+        self.__log_response(url, response_code, et_end - et_start)
         sleep(sleeptime)
         """
         re: calling sleep() here.
@@ -213,14 +212,12 @@ URLs in the queue: %s
         multiple versions of the same thread.
 
         For the purposes of this exercise we're keeping it stuid simple.
-        """
 
-        """
         Recurrsively calling self to keep the process running forever.
         This forces the thread pool manager to manage thread allocation across
         n tasks on a finite number of threads
         """
-        self.fetch_url(url, sleeptime)
+        self.__fetch_url(url, sleeptime)
 
     def summarize_stats(self, sleeptime):
         """
@@ -244,29 +241,29 @@ URLs in the queue: %s
         lb = '=' * 72
 
         # Fetch and format the HTTP response code logs
-        rc = self.fetch_response_codes()
+        rc = self.__fetch_response_codes()
         rcf = ""
         for c, n in rc:
             rcf = rcf + "%s (%s)   " % (c, n)
 
         # Format response time value
-        rt = self.fetch_max_response_time()
-        rt = "%s (%s seconds)" % (rt[0], rt[1])
+        response_time = self.__fetch_max_response_time()
+        response_time = "%s (%s seconds)" % (response_time[0], response_time[1])
 
-        summary = self.cls_stats_template % (lb, self.fetch_total_requests()[0], self.fetch_total_unique_request()[0], rcf, rt, len(self.get_urls()), lb)
+        summary = self.cls_stats_template % (lb, self.__fetch_total_requests()[0], self.__fetch_total_unique_request()[0], rcf, response_time, len(self.get_urls()), lb)
         print(summary)
         if sleeptime > 0:
             self.summarize_stats(sleeptime)
 
-    def gevent_thread_test(self, *args):
+    def __gevent_thread_test(self, *args):
         """ Test func for determining if gevent is loading the entire URL list """
         gevent.sleep(random.randint(0,2)*0.001)
         print('%i - %s - Task done' % (args[2], args[0]))
 
-    def gevent_threading(self, urls):
+    def __gevent_threading(self, urls):
         threads = []
         for d in urls:
-            threads.append(gevent.spawn(self.fetch_url, d['url'], int(d['interval'])))
+            threads.append(gevent.spawn(self.__fetch_url, d['url'], int(d['interval'])))
         gevent.joinall(threads)
 
     def futures_threading(self, urls):
@@ -276,9 +273,9 @@ URLs in the queue: %s
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=(len(urls)+1)) as executor: # +1 for the stats loop
                 executor.submit(self.summarize_stats, int(cfg.app['stat_summary_interval']))
-                [executor.submit(self.fetch_url, d['url'], int(d['interval'])) for d in urls] # JSON wasn't stored as an object but a list of dicts, hence the syntax.
+                threads = [executor.submit(self.__fetch_url, d['url'], int(d['interval'])) for d in urls] # JSON wasn't stored as an object but a list of dicts, hence the syntax.
         except:
-            print "Unexpected error:", sys.exc_info()[0]
+            print("Unexpected error: %s" % (sys.exc_info()[0]))
             raise
 
     def start_daemon(self):
@@ -286,12 +283,12 @@ URLs in the queue: %s
         Start the daemon in continuous mode and prints log to the console.
         """
         if self.cls_threadpool == 'gevent':
-            self.gevent_threading(self.get_urls())
+            self.__gevent_threading(self.get_urls())
         else: # Default to futures
             self.futures_threading(self.get_urls())
 
-    def signal_handler(signal, frame):
-            # There's a way to shut down the ThreadPoolExecutor gracefully with .shutdown, I think, however, this would require class scope access. Which seems messy.
-            print('Shutting down.')
-            sys.exit(0)
+    def signal_handler(self, signal, frame):
+        # There's a way to shut down the ThreadPoolExecutor gracefully with .shutdown, I think, however, this would require class scope access. Which seems messy.
+        print('Shutting down.')
+        sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
