@@ -30,6 +30,7 @@ class Freezer:
     cls_counter = 0
     cls_threadpool = 'futures'
     cls_conn = None
+    cls_cur = None
     cls_stats_template = """\n%s
 STATS SUMMARY
 Total URLs checked: %s
@@ -74,7 +75,7 @@ URLs in the queue: %s
 
     def setup_database(self):
         # Ha! cold_storage! Good one...
-        sql = "CREATE TABLE IF NOT EXISTS cold_storage (url text NOT NULL, http_response INTEGER NOT NULL, created_on NUMERIC NOT NULL);"
+        sql = "CREATE TABLE IF NOT EXISTS cold_storage (url text NOT NULL, http_response INTEGER NOT NULL, response_time NUMERIC NOT NULL, created_on NUMERIC NOT NULL);"
         # This is a little lazy but it works.
         try:
             self.cls_conn.execute(sql)
@@ -98,12 +99,13 @@ URLs in the queue: %s
         try:
             self.cls_conn = sqlite3.connect(db, check_same_thread=False)
             self.setup_database()
+            self.cls_cur = self.cls_conn.cursor()
         except Error as e:
             print(e)
         return None
 
-    def log_response(self, url, response):
-        sql = "INSERT INTO cold_storage VALUES ('%s', %s, %s)" % (url, int(response), time.time())
+    def log_response(self, url, response, execution_time):
+        sql = "INSERT INTO cold_storage VALUES ('%s', %s, %s, %s)" % (url, int(response), execution_time, time.time())
         try:
             self.cls_conn.execute(sql)
             self.cls_conn.commit()
@@ -112,8 +114,45 @@ URLs in the queue: %s
             print("SQLite Error: %s" % sql)
 
 
-    def fetch_response_codes():
+    def fetch_response_codes(self):
+        sql = "SELECT http_response, COUNT(http_response) FROM cold_storage GROUP BY http_response ORDER BY http_response ASC LIMIT 5"
+        try:
+            self.cls_cur.execute(sql)
+            return self.cls_cur.fetchall()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
 
+    def offset_timestamp(self, min_offset):
+        sec = min_offset*60
+        return (time.time()-sec)
+
+    def fetch_max_response_time(self):
+        sql = "SELECT url, MAX(response_time) FROM 'cold_storage' WHERE created_on > %s AND http_response = 200" % self.offset_timestamp(5)
+        try:
+            self.cls_cur.execute(sql)
+            return self.cls_cur.fetchone()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
+
+    def fetch_total_requests(self):
+        sql ="SELECT COUNT (url) FROM 'cold_storage'"
+        try:
+            self.cls_cur.execute(sql)
+            return self.cls_cur.fetchone()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
+
+    def fetch_total_unique_request(self):
+        sql = "SELECT COUNT (DISTINCT url) FROM 'cold_storage'"
+        try:
+            self.cls_cur.execute(sql)
+            return self.cls_cur.fetchone()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
 
     def fetch_url(self, url, sleeptime=5):
         """
@@ -141,20 +180,22 @@ URLs in the queue: %s
         try:
             response = urllib2.urlopen(url, timeout=(sleeptime/2)) # Set the timeout to half of the sleep interval so the schedule isn't thrown completely out of whack on a timeout. If the delay on a page is greater than the timeout this obviously throws a false positive.
             res_bytes = sys.getsizeof(response.read())
-            self.log_response(url, response.code)
+            response_code = response.code
             # Only print this on a successful request
             # Format#  13/11/17 11:18:20 - http://cnn.com - 231274 Bytes
             print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
         except urllib2.HTTPError as e:
-            self.log_response(url, e.code)
+            reponse_code = e.code
         except urllib2.URLError as e:
-            self.log_response(url, 418)
+            response_code = 418 # Made up code for DNS failure
         except requests.exceptions.RequestException as e:
             print(e)
         except:
             print("%s - Unexpected error: %s" % (url, sys.exc_info()[0]))
             raise
         et_end = time.time()
+
+        self.log_response(url, response_code, et_end - et_start)
         sleep(sleeptime)
         """
         re: calling sleep() here.
@@ -200,11 +241,22 @@ URLs in the queue: %s
 
          """
         sleep(sleeptime) # Don't summerize at startup
-
         lb = '=' * 72
-        summary = self.cls_stats_template % (lb, lb, lb, lb, lb, lb, lb)
+
+        # Fetch and format the HTTP response code logs
+        rc = self.fetch_response_codes()
+        rcf = ""
+        for c, n in rc:
+            rcf = rcf + "%s (%s)   " % (c, n)
+
+        # Format response time value
+        rt = self.fetch_max_response_time()
+        rt = "%s (%s seconds)" % (rt[0], rt[1])
+
+        summary = self.cls_stats_template % (lb, self.fetch_total_requests()[0], self.fetch_total_unique_request()[0], rcf, rt, len(self.get_urls()), lb)
         print(summary)
-        self.summarize_stats(sleeptime)
+        if sleeptime > 0:
+            self.summarize_stats(sleeptime)
 
     def gevent_thread_test(self, *args):
         """ Test func for determining if gevent is loading the entire URL list """
