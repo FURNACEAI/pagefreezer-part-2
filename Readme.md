@@ -50,7 +50,7 @@ Note on gevent: I wanted to compare futures and gevent in terms of performance, 
 -i, --viewstats       View the most recent summary stats logged to the
                       database
 
-Note: If you don't pass in -s then the service doesn't start will exit quietly.
+Note: If you don't pass in -s then the service doesn't start and will exit quietly.
 
 ## Assumptions
 
@@ -92,4 +92,4 @@ You can disable this check by adding check_same_thread=False to the .connect() m
 
 3) The summary stat "Largest URL delay (last 5 mins):" can return None if it's been more than five minutes since this was running. Noted for improvements.
 
-4) Run this long enough with low memory and a large dataset and it will absolutely seg fault. You're welcome. 
+4) Run this long enough with low memory and a large dataset and it will absolutely seg fault. You're welcome.
