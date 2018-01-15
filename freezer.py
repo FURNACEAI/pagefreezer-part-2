@@ -114,7 +114,7 @@ URLs in the queue: %s
 
 
     def __fetch_response_codes(self):
-        sql = "SELECT http_response, COUNT(http_response) FROM cold_storage GROUP BY http_response ORDER BY http_response ASC LIMIT 5"
+        sql = "SELECT http_response, COUNT(http_response) FROM cold_storage GROUP BY http_response ORDER BY COUNT(http_response) DESC LIMIT 5"
         try:
             self.cls_cur.execute(sql)
             return self.cls_cur.fetchall()
