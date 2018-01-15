@@ -1,4 +1,5 @@
 __performance__/*
-__data__/*
+__data__/
+__log__/*
 *.pyc
 .DS_Store

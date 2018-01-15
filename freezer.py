@@ -21,12 +21,15 @@ import json
 import random
 import gevent
 from gevent.threadpool import ThreadPool
+import sqlite3
+from sqlite3 import Error
 
 class Freezer:
     cls_urls = []
     cls_limit = cfg.app['limit']
     cls_counter = 0
     cls_threadpool = 'futures'
+    cls_conn = None
     cls_stats_template = """\n%s
 STATS SUMMARY
 Total URLs checked: %s
@@ -38,9 +41,12 @@ URLs in the queue: %s
     """
     def __init__(self):
         self.set_urls()
+        db = "%s/%s" % (cfg.cache['logging_directory'], cfg.cache['log_filename'])
+        self.create_db_connection(db)
 
     def set_limit(self, limit):
         self.cls_limit = int(limit)
+        return None
 
     def get_limit(self):
         return self.cls_limit
@@ -49,6 +55,7 @@ URLs in the queue: %s
         print('Loading URL list...')
         # Might want to pass in the name of the json file
         self.cls_urls = json.load(open(cfg.cache['data_directory']+'/urls.json'))
+        return None
 
     def get_urls(self):
         return self.cls_urls[0:self.get_limit()]
@@ -58,10 +65,30 @@ URLs in the queue: %s
 
     def set_profiling(self, p):
         self.cls_profile == p
+        return None
 
     def set_threading(self, tp):
         # We could preform a sanity check to ensure that the threading pool option exists but we restrict that via the arguments so...
         self.cls_threadpool = tp
+        return None
+
+    def create_db_connection(self, db):
+        """
+        Create a database connection to the SQLite database specified by the db_file
+        Parameters
+        ----------
+        db : string
+            Location of the sqlite database file
+        Returns
+        -------
+        None - Rather than passing around DB connections we'll just use a class attribute.
+        """
+        try:
+            self.cls_conn = sqlite3.connect(db)
+        except Error as e:
+            print(e)
+        return None
+
 
     def fetch_url(self, url, sleeptime=5):
         """

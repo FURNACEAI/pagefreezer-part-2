@@ -1,7 +1,9 @@
 #!/usr/bin/env python2.7
 cache = {
             'profile_directory' : '__performance__',
-            'data_directory' : '__data__'
+            'data_directory' : '__data__',
+            'logging_directory': '__log__',
+            'log_filename': 'freezer_log.db'
         }
 request_headers = {
                     "Accept-Language": "en-US,en;q=0.5",
