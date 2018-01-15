@@ -2,25 +2,27 @@
 
 Website / endpoint polling daemon for determining the health of a list of URLs.
 
-Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the Usage section below for full details.
+Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the [Usage][#usage] section below for full details.
 
 There are several urls in this list that are duplicates. The app doesn't regard this a problem and simply creates a new thread for each URL.
 
 ## Methodology
 
+Decided to use a threading model with recursive functions for the core processing. In a nutshell a thread pool manager is loaded with all of the tasks and a single func -- fetch_url() -- mapped to each thread with the URL and sleep time.
 
+Is this a good idea? Good question. Not on a single CPU running on a laptop. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts but I didn't consult them for this.
 
 ## Thread Pooling and futures
 
 As a default I'm using concurrent.futures for a couple of reasons:
 
-1) It's plenty fast for what we're doing.
+1) It's pretty fast in general
 
-2) It is in the std lib starting in Python 3.4.
+2) It's in the std lib starting in Python 3.4
 
-3) asyncio isn't technically supported in Python 2.x (I don't believe) and Trollius is throwing a ton of errors that I didn't feel like debugging.
+3) asyncio isn't technically supported in Python 2.x (I don't believe) and Trollius is throwing a ton of errors that I didn't feel like debugging
 
-An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does slow very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with dispy, Celery, or similar tool.
+An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does so very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with [dispy][http://dispy.sourceforge.net/], [Celery][http://www.celeryproject.org/], or, possibly, a message queing solution.
 
 On my laptop this process bogs down on any list of urls > 4,000 items.
 
@@ -60,6 +62,8 @@ If the assumption is wrong it can always be added in.
 
 Yeah, me too. Testing asynchronous functions -- which the bulk of this code is -- is hard even with Mock.
 
+I'll add some tests for the stats functions.
+
 ## Lessons Learned
 
 1) https://abc.com/ doesn't resolve. Great job, ABC.
@@ -68,10 +72,16 @@ Yeah, me too. Testing asynchronous functions -- which the bulk of this code is -
 
 3) Tread pool manager loads about as fast as a standard list.
 
-4) SQLite has some interesting concurrency checks that preview it from using a single connection across multiple threads, throwing an error:
+4) SQLite has some interesting concurrency checks that prevent it from using a single connection across multiple threads, throwing an error:
 ```
 SQLite objects created in a thread can only be used in that same thread.The object was created in thread id 140736291423040 and this is thread id 123145510952960
 ```
 You can disable this check by adding check_same_thread=False to the .connect() method.
 
-Does turning off thread-safe create an opening for disk I/O errors? I'm not sure. Wouldn't happen with a real database, I suppose.
+# Issues
+
+1) Turning off thread-safe for SQLite create an opening for disk I/O errors. Wouldn't happen with a real database.
+
+2) Just realized I should destroy any URLs in the list not being used post-limit so they're not chewing up memory. Noted for improvements.
+
+3) The summary stat "Largest URL delay (last 5 mins):" can return None if it's been more than five minutes since this was running. Note for improvements.
