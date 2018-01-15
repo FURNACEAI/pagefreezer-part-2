@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
-cache = { 'profile_directory' : '__performance__',
-        'data_directory' : '__data__'
+cache = {
+            'profile_directory' : '__performance__',
+            'data_directory' : '__data__'
         }
 request_headers = {
                     "Accept-Language": "en-US,en;q=0.5",
@@ -9,4 +10,7 @@ request_headers = {
                     "Referer": "http://thewebsite.com",
                     "Connection": "keep-alive"
                     }
-app = { 'limit' : 100 } 
+app = {
+        'limit' : 100,
+        'stat_summary_interval' : 10
+ }
