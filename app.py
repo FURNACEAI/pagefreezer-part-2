@@ -18,9 +18,9 @@ def main():
     parser.add_argument('-t', '--threading', help="""Tells the application which
      thread pool manager to use. Defaults to "futures." """, choices=['futures', 'gevent'])
 
-    parser.add_argument('-l', '--limit', help="""Indicates how many URLs we
-    should poll. Takes an int. If left empty, it will use all URLs defined in
-    the JSON file (10,000+)""")
+    parser.add_argument('-l', '--limit', type=int, help="""Indicates how many
+    URLs we should poll. Takes an int. If left empty, it will use the value in
+    the defined in the config file""")
 
     parser.add_argument('-i', '--viewstats', action="store_true", help="""View
     the most recent summary stats logged to the database""")
