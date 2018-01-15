@@ -184,7 +184,7 @@ URLs in the queue: %s
             # Format#  13/11/17 11:18:20 - http://cnn.com - 231274 Bytes
             print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
         except urllib2.HTTPError as e:
-            reponse_code = e.code
+            response_code = e.code
         except urllib2.URLError as e:
             response_code = 418 # Made up code for DNS failure
         except requests.exceptions.RequestException as e:
