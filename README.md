@@ -34,6 +34,8 @@ Note on gevent: I wanted to compare futures and gevent in terms of performance, 
 
 ## Usage
 
+Entry point for this application is [app.py](https://github.com/FURNACEAI/pagefreezer-part-2/blob/master/app.py). For it to run properly, you'll need to pass in some options. 
+
 -h, --help            show this help message and exit
 
 -s, --start           Starts the polling daemon.
