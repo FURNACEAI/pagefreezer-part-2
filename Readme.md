@@ -1,6 +1,6 @@
 # PageFreezer DevTest Part 2
 
-Website / endpoint polling daemon for determining the health of a list of URLs.
+**Website / endpoint polling daemon for determining the health of a list of URLs.**
 
 Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the [Usage][#usage] section below for full details.
 
@@ -58,7 +58,7 @@ Regarding the following instruction: *what URLS are currently being checked*
 
 I took this to mean the list of the URLs being checked by the entire process, not a snapshot of URLs being processed at that instant. The later is doable using a small stateful wrapper in fetch_url().
 
-In either case, I left it off the summary stats console log since it could print out 1,000 URLs since I expanded the test set.
+In either case, I left it off the summary stats console log as it could print out 1,000 URLs since I expanded the test set.
 
 What was your intention with this request? I can build it but would need some clairification.
 
