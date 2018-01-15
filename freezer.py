@@ -72,6 +72,18 @@ URLs in the queue: %s
         self.cls_threadpool = tp
         return None
 
+    def setup_database(self):
+        # Ha! cold_storage! Good one...
+        sql = "CREATE TABLE IF NOT EXISTS cold_storage (url text NOT NULL, http_response INTEGER NOT NULL, created_on NUMERIC NOT NULL);"
+        # This is a little lazy but it works.
+        try:
+            self.cls_conn.execute(sql)
+            self.cls_conn.commit()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
+        return None
+
     def create_db_connection(self, db):
         """
         Create a database connection to the SQLite database specified by the db_file
@@ -84,10 +96,23 @@ URLs in the queue: %s
         None - Rather than passing around DB connections we'll just use a class attribute.
         """
         try:
-            self.cls_conn = sqlite3.connect(db)
+            self.cls_conn = sqlite3.connect(db, check_same_thread=False)
+            self.setup_database()
         except Error as e:
             print(e)
         return None
+
+    def log_response(self, url, response):
+        sql = "INSERT INTO cold_storage VALUES ('%s', %s, %s)" % (url, int(response), time.time())
+        try:
+            self.cls_conn.execute(sql)
+            self.cls_conn.commit()
+        except sqlite3.Error as er:
+            print(er)
+            print("SQLite Error: %s" % sql)
+
+
+    def fetch_response_codes():
 
 
     def fetch_url(self, url, sleeptime=5):
@@ -116,23 +141,18 @@ URLs in the queue: %s
         try:
             response = urllib2.urlopen(url, timeout=(sleeptime/2)) # Set the timeout to half of the sleep interval so the schedule isn't thrown completely out of whack on a timeout. If the delay on a page is greater than the timeout this obviously throws a false positive.
             res_bytes = sys.getsizeof(response.read())
-            res_code = response.code
-            print("%s - Returned HTTP code %s" % (url, response.code))
+            self.log_response(url, response.code)
             # Only print this on a successful request
             # Format#  13/11/17 11:18:20 - http://cnn.com - 231274 Bytes
-            #print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
+            print("%s - %s - %s Bytes" % (datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"), url, res_bytes))
         except urllib2.HTTPError as e:
-            pass
-            #print("%s - Returned HTTP Code: %s \n" % (url, e.code))
+            self.log_response(url, e.code)
         except urllib2.URLError as e:
-            print(e)
-            #print('%s - Possible malformed URL\n' % (url))
+            self.log_response(url, 418)
         except requests.exceptions.RequestException as e:
             print(e)
         except:
-            print("Unexpected error")
-            #print(sys.exc_info()[0])
-            # print("%s - Unexpected error: %s" % (url, sys.exc_info()[0]))
+            print("%s - Unexpected error: %s" % (url, sys.exc_info()[0]))
             raise
         et_end = time.time()
         sleep(sleeptime)

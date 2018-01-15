@@ -56,7 +56,7 @@ If the assumption is wrong it can always be added in.
 
 ## Testing
 
-*we'd like to see some test cases for your implementation, checking the main features we outlined in the description of the problem (no need to test everything!)*
+> *we'd like to see some test cases for your implementation, checking the main features we outlined in the description of the problem (no need to test everything!)*
 
 Yeah, me too. Testing asynchronous functions -- which the bulk of this code is -- is hard even with Mock.
 
@@ -67,3 +67,11 @@ Yeah, me too. Testing asynchronous functions -- which the bulk of this code is -
 2) Shockingly light performance hit. This isn't coin mining by a long shot.
 
 3) Tread pool manager loads about as fast as a standard list.
+
+4) SQLite has some interesting concurrency checks that preview it from using a single connection across multiple threads, throwing an error:
+```
+SQLite objects created in a thread can only be used in that same thread.The object was created in thread id 140736291423040 and this is thread id 123145510952960
+```
+You can disable this check by adding check_same_thread=False to the .connect() method.
+
+Does turning off thread-safe create an opening for disk I/O errors? I'm not sure. Wouldn't happen with a real database, I suppose.
