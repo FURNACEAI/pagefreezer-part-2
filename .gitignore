@@ -1,8 +1,6 @@
 __performance__/*
 !__performance__/.gitkeep
-__data__/*
-!__data__/.gitkeep
 __log__/*
-!__log__/.gitkeep 
+!__log__/.gitkeep
 *.pyc
 .DS_Store
