@@ -60,7 +60,7 @@ If the assumption is wrong it can always be added in.
 
 > *we'd like to see some test cases for your implementation, checking the main features we outlined in the description of the problem (no need to test everything!)*
 
-Yeah, me too. Testing asynchronous functions -- which the bulk of this code is -- is hard even with Mock.
+Yeah, me too. Testing recursive code -- which the bulk of this code is -- is hard even with Mock. I could add some logging nonsense specific to testing but sounds like a terrible idea. 
 
 I'll add some tests for the stats functions.
 
