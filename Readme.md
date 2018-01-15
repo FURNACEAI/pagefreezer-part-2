@@ -2,7 +2,7 @@
 
 **Website / endpoint polling daemon for determining the health of a list of URLs.**
 
-Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the [Usage][#usage] section below for full details.
+Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the [Usage](#usage) section below for full details.
 
 There are several urls in this list that are duplicates. The app doesn't regard this a problem and simply creates a new thread for each URL.
 
