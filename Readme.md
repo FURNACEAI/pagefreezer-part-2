@@ -43,7 +43,7 @@ Note on gevent: I wanted to compare futures and gevent in terms of performance, 
                       use. Defaults to "futures."
 
 -l LIMIT, --limit LIMIT
-                      Indicates how many URLs should we should poll. Takes
+                      Indicates how many URLs should polled. Takes
                       an int. If left empty, it will use all URLs defined in
                       the JSON file (10,000+)
 
@@ -86,8 +86,8 @@ You can disable this check by adding check_same_thread=False to the .connect() m
 
 # Issues
 
-1) Turning off thread-safe for SQLite create an opening for disk I/O errors. Wouldn't happen with a real database.
+1) Turning off thread-safe for SQLite creates an opening for disk I/O errors. Wouldn't happen with a real database.
 
 2) Just realized I should destroy any URLs in the list not being used post-limit so they're not chewing up memory. Noted for improvements.
 
-3) The summary stat "Largest URL delay (last 5 mins):" can return None if it's been more than five minutes since this was running. Note for improvements.
+3) The summary stat "Largest URL delay (last 5 mins):" can return None if it's been more than five minutes since this was running. Noted for improvements.
