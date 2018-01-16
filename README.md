@@ -2,17 +2,17 @@
 
 **Website / endpoint polling daemon for determining the health of a list of URLs.**
 
-Sure, 9 urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with -l <number>. See the [Usage](#usage) section below for full details.
+Sure, nine urls is fine. But what about 10,000? I've expanded the JSON list with a test set of 10K sample urls. The list can be pared down at the command line with `-l <number>`. See the [Usage](#usage) section below for full details.
 
 There are several urls in this list that are duplicates. The app doesn't regard this a problem and simply creates a new thread for each URL.
 
 ## Methodology
 
-Decided to use a threading model with recursive functions for the core processing. In a nutshell a thread pool manager is loaded with all of the tasks and a single func -- fetch_url() -- mapped to each thread with the URL and sleep time.
+I decided to use a threading model with recursive functions for the core processing. In a nutshell a thread pool manager is loaded with all of the tasks and a single func -- fetch_url() -- is mapped to each thread with the URL and sleep time.
 
-Is this a good idea? Good question. Certainly, not on a single CPU running on a laptop. Certainly not if you want don't a single point of failure. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts, I didn't consult them for this. My gut says this isn't the best method of tackling this problem but given the time constraints, this was an option that could be built.
+Is this a good idea? Good question. Certainly, not on a single CPU running on a laptop. Certainly not if you don't want a single point of failure. Is it a good idea in general? Possibly. I can't claim to be a multithreading expert. While I know cluster and distributed computing experts, I didn't consult them for this. My gut says this isn't the best method of tackling this problem but given the time constraints, this was an option that could be built.
 
-In the end, there's a germ of an idea that could be built upon here.
+In the end, there's a germ of an idea here that could be built upon.
 
 Maybe.
 
@@ -26,7 +26,7 @@ As a default I'm using concurrent.futures for a couple of reasons:
 
 3) asyncio isn't technically supported in Python 2.x (I don't believe) and Trollius is throwing a ton of errors that I didn't feel like debugging
 
-An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does so very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with [dispy](http://dispy.sourceforge.net/), [Celery](http://www.celeryproject.org/), or, possibly, a message queing solution.
+An interesting limitation that I hadn't expected is that the initialization of the thread pool bottlenecks once the service start fetching urls. The thread pool increases, however, it does so very slowly since I believe the manager is busying with the fetching processes. This could probably be resolved by distributing the tasks across a cluster with [dispy](http://dispy.sourceforge.net/), [Celery](http://www.celeryproject.org/), or, possibly, a message queuing solution.
 
 On my laptop this process bogs down on any list of urls > 4,000 items.
 
@@ -34,7 +34,7 @@ Note on gevent: I wanted to compare futures and gevent in terms of performance, 
 
 ## Usage
 
-Entry point for this application is [app.py](https://github.com/FURNACEAI/pagefreezer-part-2/blob/master/app.py). For it to run properly, you'll need to pass in some options. 
+Entry point for this application is [app.py](https://github.com/FURNACEAI/pagefreezer-part-2/blob/master/app.py). For it to run properly, you'll need to pass in some options.
 
 -h, --help            show this help message and exit
 
@@ -46,23 +46,23 @@ Entry point for this application is [app.py](https://github.com/FURNACEAI/pagefr
 
 -l LIMIT, --limit LIMIT
                       Indicates how many URLs should polled. Takes
-                      an int. If left empty, it will use all URLs defined in
-                      the JSON file (10,000+)
+                      an int. If left empty, it will use the value in the
+                      defined in the config file
 
 -i, --viewstats       View the most recent summary stats logged to the
                       database
 
-Note: If you don't pass in -s then the service doesn't start and will exit quietly.
+Note: If you don't pass in -s then the service doesn't start and will exit (relatively) quietly.
 
 ## Assumptions
 
 Regarding the following instruction: *what URLS are currently being checked*
 
-I took this to mean the list of the URLs being checked by the entire process, not a snapshot of URLs being processed at that instant. The later is doable using a small stateful wrapper in fetch_url().
+I took this to mean the list of the URLs being checked by the entire process, not a snapshot of URLs being processed at that instant. The later is doable using a small stateful wrapper in `fetch_url()`.
 
-In either case, I left it off the summary stats console log as it could print out 1,000 URLs since I expanded the test set.
+In either case, I left it off the summary stats console log as it could print out *n* URLs since I expanded the test set.
 
-What was your intention with this request? I can build it but would need some clairification.
+What was your intention with this request? I can build it but would need some clarification.
 
 ## Testing
 
@@ -84,7 +84,7 @@ I'll add some tests for the stats functions.
 ```
 SQLite objects created in a thread can only be used in that same thread.The object was created in thread id 140736291423040 and this is thread id 123145510952960
 ```
-You can disable this check by adding check_same_thread=False to the .connect() method.
+You can disable this check by adding `check_same_thread=False` to the `.connect()` method, which I did.
 
 # Issues
 
