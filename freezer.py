@@ -104,6 +104,9 @@ URLs in the queue: %s
         return None
 
     def __log_response(self, url, response, execution_time):
+        """
+        Logs a polling request to the database regardless of success / fail.
+        """
         sql = "INSERT INTO cold_storage VALUES ('%s', %s, %s, %s)" % (url, int(response), execution_time, time.time())
         try:
             self.cls_conn.execute(sql)
@@ -111,7 +114,6 @@ URLs in the queue: %s
         except sqlite3.Error as er:
             print(er)
             print("SQLite Error: %s" % sql)
-
 
     def __fetch_response_codes(self):
         sql = "SELECT http_response, COUNT(http_response) FROM cold_storage GROUP BY http_response ORDER BY COUNT(http_response) DESC LIMIT 5"
@@ -222,10 +224,6 @@ URLs in the queue: %s
     def summarize_stats(self, sleeptime):
         """
         Compiles stats from the database into a snapshot summary.
-
-        The assignment didn't really say where or how these should be logged so we're just going to print these to the console every n seconds. Obviously this could be customized. Summary isn't persistant, it's generated from the database log.
-
-        This isn't how I would normally build something like this. This should be in a cron job so if it fails it doesn't take down the polling. However, I also wouldn't build a daemon that printed to console continuously either, but it's a scratch test so there it is.
 
         Parameters
         ----------
