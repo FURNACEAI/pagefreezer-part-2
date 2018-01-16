@@ -253,6 +253,9 @@ URLs in the queue: %s
         if sleeptime > 0:
             self.summarize_stats(sleeptime)
 
+    def processes_thread(self, func, *kwargs):
+        pass
+
     def __gevent_thread_test(self, *args):
         """ Test func for determining if gevent is loading the entire URL list """
         gevent.sleep(random.randint(0,2)*0.001)
