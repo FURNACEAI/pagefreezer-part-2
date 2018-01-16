@@ -25,6 +25,8 @@ def main():
     parser.add_argument('-i', '--viewstats', action="store_true", help="""View
     the most recent summary stats logged to the database""")
 
+    parser.add_argument('-d', '--debug', action="store_true", help="""Testing
+    hook for scratch debuggign work.""")
 
     args = parser.parse_args()
     freezer = Freezer()
@@ -35,6 +37,8 @@ def main():
         freezer.set_threading(args.threading)
     if args.viewstats:
         freezer.summarize_stats(0)
+    if args.debug:
+        freezer.process_thread(freezer.debug, ('foo', 'bar'))
     if args.start:
         freezer.start_daemon()
 

@@ -41,7 +41,7 @@ URLs in the queue: %s
     """
     def __init__(self):
         self.set_urls()
-        db = "%s/%s" % (cfg.cache['logging_directory'], cfg.cache['log_filename'])
+        db = "./%s/%s" % (cfg.cache['logging_directory'], cfg.cache['log_filename'])
         self.__create_db_connection(db)
 
     def set_limit(self, limit):
@@ -54,7 +54,7 @@ URLs in the queue: %s
     def set_urls(self):
         print('Loading URL list...')
         # Might want to pass in the name of the json file
-        self.cls_urls = json.load(open(cfg.cache['data_directory']+'/urls.json'))
+        self.cls_urls = json.load(open("./"+cfg.cache['data_directory']+'/urls.json'))
         return None
 
     def get_urls(self):
@@ -253,11 +253,17 @@ URLs in the queue: %s
         if sleeptime > 0:
             self.summarize_stats(sleeptime)
 
-    def process_thread(self, func, *kwargs):
+    def debug(self, printthis):
+        for _ in printthis:
+            print(_)
+        sleep(5)
+        return time.time()
+
+    def process_thread(self, func, *args):
         """ DRY wrapper on the recusive elements so that the individual components can be tested """
-        func(kwargs)
+        func(*args)
         # Loop forever
-        self.process_thread(func, kwargs)
+        self.process_thread(func, *args)
 
     def __gevent_thread_test(self, *args):
         """ Test func for determining if gevent is loading the entire URL list """
