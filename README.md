@@ -16,7 +16,7 @@ In the end, there's a germ of an idea here that could be built upon.
 
 Maybe.
 
-**UPDATE: ** [After a bit more research,](https://software.intel.com/en-us/articles/case-study-parallelizing-a-recursive-problem-with-intel-threading-building-blocks) it appears the pattern we've used here is fairly common in parallel processing applications.
+**UPDATE:** [After a bit more research,](https://software.intel.com/en-us/articles/case-study-parallelizing-a-recursive-problem-with-intel-threading-building-blocks) it appears the pattern we've used here is fairly common in parallel processing applications.
 
 The one major structural change that would probably be good to make is to break the bulk of the fetching code out into a non-recursive function. The rule of thumb seems to be "always reduce your work down to a non-recursive element."
 
@@ -44,7 +44,7 @@ Note on gevent: I wanted to compare futures and gevent in terms of performance, 
 
 The assignment didn't really say where or how these should be logged so we're just going to print these to the console every n seconds. Obviously this could be customized. Summary isn't persistent, it's generated on the fly from the database log.
 
-This isn't how I would normally build something like this. This should be in a cron job or a web dashboard so if it fails it doesn't take down the polling. However, I also wouldn't build a daemon that printed to console continuously either with a `verbose` switch, but it's a scratch test so there it is. 
+This isn't how I would normally build something like this. This should be in a cron job or a web dashboard so if it fails it doesn't take down the polling. However, I also wouldn't build a daemon that printed to console continuously either with a `verbose` switch, but it's a scratch test so there it is.
 
 One note on the summary: For the stat "Largest URL delay (last 5 mins):" I'm only returning a value for a successful fetch (200), not failures.
 
