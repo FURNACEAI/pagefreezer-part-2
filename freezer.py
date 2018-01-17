@@ -64,6 +64,8 @@ URLs in the queue: %s
         return self.cls_profile
 
     def set_profiling(self, p):
+        if not isinstance(p, bool):
+            raise TypeError('Profile flag must be True or False')
         self.cls_profile = p
         return None
 
